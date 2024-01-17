@@ -52,7 +52,7 @@ function install() {
     // if all options entered by the user are valid
     if (validateOptions()) {
       // create triggers
-      createTriggers();
+      // createTriggers();
       // create webhooks
       createWebhooks();
 

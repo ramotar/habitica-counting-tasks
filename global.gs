@@ -41,11 +41,13 @@ function doPost(event) {
     processWebhookInstant(type, dataContents);
 
     // Create a trigger for delayed processing
+    /*
     var trigger = ScriptApp.newTrigger('doPostTriggered').timeBased().after(1).create();
     CacheService.getScriptCache().put(
       trigger.getUniqueId(),
       event.postData.contents
     );
+    */
   }
   catch (error) {
     // To prevent Habitica from shutting down the webhook because it is unresponsive,
