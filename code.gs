@@ -15,7 +15,7 @@ function processWebhookInstant(type, data) {
 
   // scored a ToDo in direction up
   if (task.type == "todo" && data.direction == "up") {
-     let matches = task.notes.match(counterRegExp);
+    let matches = task.notes.match(counterRegExp);
 
     logDebug(matches);
 
