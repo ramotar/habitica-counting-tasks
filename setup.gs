@@ -1,5 +1,5 @@
 /**
- * Counting Tasks v1.0.0 by Turac
+ * Counting Tasks v1.0.1 by Turac
  *
  * See Wiki page for info & setup instructions:
  * https://habitica.fandom.com/wiki/Counting_Tasks
