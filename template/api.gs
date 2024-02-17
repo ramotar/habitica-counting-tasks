@@ -1,4 +1,11 @@
 /**
+ * Habitica: GAS Template v1.3.0 by @Turac
+ *
+ * See GitHub page for info & setup instructions:
+ * https://github.com/ramotar/habitica-gas-template
+ */
+
+/**
  * Define regular expression to test user ID and API tokens
  */
 const TOKEN_REGEXP = new RegExp("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
@@ -96,6 +103,20 @@ let rateLimit = new RateLimit(null);
  */
 function api_fetch(url, params, instant = false, maxAttempts = 3) {
   var response;
+  let domain = url.split("/", 3).join("/");
+
+  if (!url.startsWith("https://habitica.com/api/v3")) {
+    let cause = {
+      "responseCode": 400,
+      "success": false,
+      "error": "BadRequest",
+      "message": "The URL " + url + " does not point to the Habitica API."
+    }
+    throw new Error(
+      "Request failed for " + domain + " returned code " + 400 + ".",
+      { cause: cause }
+    );
+  }
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
 
@@ -144,13 +165,137 @@ function api_fetch(url, params, instant = false, maxAttempts = 3) {
     }
   }
 
-  let domain = url.split("/", 3).join("/");
+  let cause = Object.assign(
+    { "responseCode": response.getResponseCode() },
+    parseJSON(response.getContentText()),
+  );
 
   // if request failed finally, throw exception
   throw new Error(
     "Request failed for " + domain + " returned code " + response.getResponseCode() + ". Truncated server response: " + response.getContentText(),
-    { cause: response }
+    { cause: cause }
   );
+}
+
+/**
+ * api_getContent(forceFetch [optional])
+ *
+ * Returns the content data from the Habitica API.
+ * The content data is cached by default. Use forceFetch to force
+ * a new fetch from the Habitica API and received updated content data.
+ */
+let _cachedContent;
+function api_getContent(forceFetch = false) {
+  if (forceFetch || typeof _cachedContent === "undefined") {
+    let response = api_fetch("https://habitica.com/api/v3/content", GET_PARAMS);
+    let obj = parseJSON(response);
+    _cachedContent = obj.data;
+  }
+  return _cachedContent;
+}
+
+/**
+ * api_getUser(forceFetch [optional])
+ *
+ * Returns the user data from the Habitica API.
+ * The user data is cached by default. Use forceFetch to force
+ * a new fetch from the Habitica API and received updated user data.
+ */
+let _cachedUser;
+function api_getUser(forceFetch = false) {
+  if (forceFetch || typeof _cachedUser === "undefined") {
+    let response = api_fetch("https://habitica.com/api/v3/user", GET_PARAMS);
+    let obj = parseJSON(response);
+    _cachedUser = obj.data;
+  }
+  return _cachedUser;
+}
+
+/**
+ * api_getParty(forceFetch [optional])
+ *
+ * Returns the party data from the Habitica API.
+ * The party data is cached by default. Use forceFetch to force
+ * a new fetch from the Habitica API and received updated party data.
+ */
+let _cachedParty;
+function api_getParty(forceFetch = false) {
+  if (forceFetch || typeof _cachedParty === "undefined") {
+    let response = api_fetch("https://habitica.com/api/v3/groups/party", GET_PARAMS);
+    let obj = parseJSON(response);
+    _cachedParty = obj.data;
+  }
+  return _cachedParty;
+}
+
+/**
+ * api_getPartyMembers(forceFetch [optional])
+ *
+ * Returns the party member data from the Habitica API.
+ * The party member data is cached by default. Use forceFetch to force
+ * a new fetch from the Habitica API and received updated party member data.
+ */
+let _cachedPartyMembers;
+function api_getPartyMembers(forceFetch = false) {
+  if (forceFetch || typeof _cachedPartyMembers === "undefined") {
+    let response = api_fetch("https://habitica.com/api/v3/groups/party/members?includeAllPublicFields=true", GET_PARAMS);
+    let obj = parseJSON(response);
+    _cachedPartyMembers = obj.data;
+  }
+  return _cachedPartyMembers;
+}
+
+/**
+ * api_inviteToQuest(questKey)
+ *
+ * Invite the party to a quest from your inventory.
+ * The quest is identified by its questKey.
+ */
+function api_inviteToQuest(questKey) {
+  api_fetch("https://habitica.com/api/v3/groups/party/quests/invite/" + questKey, POST_PARAMS);
+}
+
+/**
+ * api_cancelQuest()
+ *
+ * Cancel a pending quest invite.
+ */
+function api_cancelQuest() {
+  api_fetch("https://habitica.com/api/v3/groups/party/quests/cancel", POST_PARAMS);
+}
+
+/**
+ * api_acceptQuestInvite()
+ *
+ * Accept a pending quest invite.
+ */
+function api_acceptQuestInvite() {
+  api_fetch("https://habitica.com/api/v3/groups/party/quests/accept", POST_PARAMS);
+}
+
+/**
+ * api_forceStartQuest()
+ *
+ * Force-start a pending quest invite.
+ */
+function api_forceStartQuest() {
+  api_fetch("https://habitica.com/api/v3/groups/party/quests/force-start", POST_PARAMS);
+}
+
+/**
+ * api_sendPartyMessage(message)
+ *
+ * Sends a message to your party.
+ */
+function api_sendPartyMessage(message) {
+  let params = Object.assign({
+    "contentType": "application/json",
+    "payload": JSON.stringify({
+      "message": String(message)
+    })
+  }, POST_PARAMS);
+
+  api_fetch("https://habitica.com/api/v3/groups/party/chat", params);
 }
 
 /**
@@ -179,6 +324,35 @@ function api_sendPM(message, recipient = INT_USER_ID) {
 }
 
 /**
+ * api_createUserTask()
+ *
+ * Create a task belonging to the user.
+ * task is an object with key/value pairs as defined by
+ * https://habitica.com/apidoc/#api-Task-CreateUserTasks
+ */
+function api_createUserTask(task) {
+  let params = Object.assign({
+    "contentType": "application/json",
+    "payload": JSON.stringify(task)
+  }, POST_PARAMS);
+
+  api_fetch("https://habitica.com/api/v3/tasks/user", params);
+}
+
+/**
+ * api_getWebhooks()
+ *
+ * Returns all webhooks for the user.
+ */
+function api_createWebhook() {
+  let response = api_fetch("https://habitica.com/api/v3/user/webhook", GET_PARAMS);
+  let object = parseJSON(response);
+  let webhooks = object.data;
+
+  return webhooks;
+}
+
+/**
  * api_createWebhook(webhookData)
  *
  * Creates a webhook with the given webhook data.
@@ -203,18 +377,11 @@ function api_createWebhook(webhookData) {
 }
 
 /**
- * api_getUser(forceFetch [optional])
+ * api_deleteWebhook(webhookId)
  *
- * Returns the user data from the Habitica API.
- * The user data is cached by default. Use forceFetch to force
- * a new fetch from the Habitica API and received updated user data.
+ * Deletes a webhook.
+ * The webhook is identified by its webhookId.
  */
-let _cachedUser;
-function api_getUser(forceFetch = false) {
-  if (forceFetch || typeof _cachedUser === "undefined") {
-    let response = api_fetch("https://habitica.com/api/v3/user", GET_PARAMS);
-    let obj = parseJSON(response);
-    _cachedUser = obj.data;
-  }
-  return _cachedUser;
+function api_deleteWebhook(webhookId) {
+  api_fetch("https://habitica.com/api/v3/user/webhook/" + webhookId, DELETE_PARAMS);
 }

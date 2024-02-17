@@ -8,7 +8,7 @@ function doGet(event) {
   let webAppURL = ScriptApp.getService().getUrl();
   setWebAppURL(webAppURL);
 
-  let template = HtmlService.createTemplateFromFile('doGet');
+  let template = HtmlService.createTemplateFromFile('template/doGet');
   template.installTime = getInstallTime();
 
   let output = template.evaluate();
@@ -38,16 +38,25 @@ function doPost(event) {
     const type = dataContents.type;
 
     // Process the webhook
-    processWebhookInstant(type, dataContents);
+    let processingResult = processWebhookInstant(type, dataContents);
 
-    // Create a trigger for delayed processing
-    /*
-    var trigger = ScriptApp.newTrigger('doPostTriggered').timeBased().after(1).create();
-    CacheService.getScriptCache().put(
-      trigger.getUniqueId(),
-      event.postData.contents
-    );
-    */
+    // If processWebhookInstant didn't return false
+    // (indicating, that no delayed processing is necessary)
+    if (processingResult !== false) {
+      let dataString = event.postData.contents;
+
+      // If new data was passed for delayed processing
+      if (typeof processingResult === "object") {
+        dataString = JSON.stringify(processingResult);
+      }
+
+      // Create a trigger for delayed processing
+      var trigger = ScriptApp.newTrigger('doPostTriggered').timeBased().after(1).create();
+      CacheService.getScriptCache().put(
+        trigger.getUniqueId(),
+        dataString
+      );
+    }
   }
   catch (error) {
     // To prevent Habitica from shutting down the webhook because it is unresponsive,
