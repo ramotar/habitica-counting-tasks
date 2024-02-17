@@ -1,8 +1,8 @@
 /**
- * Example script v1.2.3 by John Doe
+ * Counting Tasks v1.0.0 by Turac
  *
- * See Wiki / GitHub page for info & setup instructions:
- * https://link/to/wiki-or-github/page
+ * See Wiki page for info & setup instructions:
+ * https://habitica.fandom.com/wiki/Counting_Tasks
  */
 
 /* ========================================== */
