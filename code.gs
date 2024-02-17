@@ -42,15 +42,12 @@ function processWebhookInstant(type, data) {
         newTask.date = task.date;
         newTask.priority = task.priority;
 
-        let params = Object.assign({
-          "contentType": "application/json",
-          "payload": JSON.stringify(newTask)
-        }, POST_PARAMS);
-
-        api_fetch("https://habitica.com/api/v3/tasks/user", params);
+        api_createUserTask(newTask);
       }
     }
   }
+
+  return false;
 }
 
 function processWebhookDelayed(type, data) {
